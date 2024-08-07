@@ -4,7 +4,6 @@ import { getServerAuthSession } from "./auth"
 import { db } from "./db"
 import { journals } from "./db/schema"
 import { desc, eq } from 'drizzle-orm';
-import { env } from '@/env';
 import nodemailer from 'nodemailer';
 import Showdown from "showdown";
 
@@ -101,13 +100,13 @@ const body = converter.makeHtml(html);
             service: 'gmail',
             secure: true,
             auth: {
-                user: env.Email,
-                pass: env.EmailPass
+                user: process.env.Email!,
+                pass: process.env.EmailPass!
             }
         });
         
         const mailOptions = {
-            from: env.Email,
+            from: process.env.Email!,
             to: user.email!,
             subject: Subject,
             html: body
