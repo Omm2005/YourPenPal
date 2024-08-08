@@ -34,6 +34,13 @@ export const aiResponse = async (journal: string) => {
 
     try {
 
+        const journalId = await db.select({
+            id: journals.id
+        })
+        .from(journals)
+        .where(eq(journals.body, journal))
+        .execute()
+
       const finalJournal = `Journal of ${user.name} - ${journal}`
     //   
       const response = await fetch(`${process.env.AI_URL}/api/journal?prompt=` + finalJournal)
@@ -41,6 +48,8 @@ export const aiResponse = async (journal: string) => {
       const res = await data.response
       const subject = res.split('title - ')[1]?.split('<p>')[0] || 'Insights on your journal'
       const aiResponse = res.split(subject!)[1]! || res
+
+      await updateJournalEntry(journalId[0]!.id, aiResponse, subject!)
 
       await sendEmail(subject!, aiResponse)
 
