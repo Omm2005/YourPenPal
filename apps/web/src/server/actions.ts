@@ -7,7 +7,7 @@ import { desc, eq } from 'drizzle-orm';
 import nodemailer from 'nodemailer';
 import Showdown from "showdown";
 
-export const addJournalEntry = async (body: string , aiResponse: string, title: string) => {
+export const addJournalEntry = async (body: string) => {
     const session = await getServerAuthSession()
     const user = session?.user
 
@@ -17,13 +17,57 @@ export const addJournalEntry = async (body: string , aiResponse: string, title: 
 
     await db.insert(journals).values({
         body,
-        aiResponse,
-        title,
         userId: user.id,
         createdAt: new Date()
     }).execute()
 
     return ({ success: true })
+}
+
+export const aiResponse = async (journal: string) => {
+    const session = await getServerAuthSession()
+    const user = session?.user
+
+    if(!user) {
+        return ({ success: false, error: "User not found" })
+    }
+
+    try {
+
+      const finalJournal = `Journal of ${user.name} - ${journal}`
+    //   
+      const response = await fetch(`${process.env.AI_URL}/api/journal?prompt=` + finalJournal)
+      const data: { response: string } = await response.json()
+      const res = await data.response
+      const subject = res.split('title - ')[1]?.split('<p>')[0] || 'Insights on your journal'
+      const aiResponse = res.split(subject!)[1]! || res
+
+      await sendEmail(subject!, aiResponse)
+
+      return ({ success: true })
+    } catch (error) {
+        return ({ success: false, error: error })
+    } 
+}
+
+export const updateJournalEntry = async (id: string, aiResponse: string, title: string) => {
+    const session = await getServerAuthSession()
+    const user = session?.user
+
+    if(!user) {
+        return ({ success: false, error: "User not found" })
+    }
+
+    try {
+        await db.update(journals)
+        .set({ aiResponse, title })
+        .where(eq(journals.id, id))
+        .execute()
+
+        return ({ success: true })
+    } catch (error) {
+        return ({ success: false, error: error })
+    }
 }
 
 export const deleteJournalEntry = async (id: string) => {

@@ -6,7 +6,7 @@ import { ArrowRight, Calendar } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { addJournalEntry, sendEmail } from '@/server/actions'
+import { addJournalEntry, aiResponse, sendEmail } from '@/server/actions'
 import { toast } from 'sonner'
 import { User } from 'next-auth'
 import Navbar from './global/Navbar'
@@ -18,7 +18,6 @@ type Props = {
 
 const JournalInput = ({user}: Props) => {
   const [journal , setJournal] = React.useState('')
-  const [aiResponse, setAiResponse] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
 
   const handleOnSubmit = async(e: React.FormEvent<HTMLFormElement>) => {
@@ -31,23 +30,23 @@ const JournalInput = ({user}: Props) => {
 
     try {
 
-      const finalJournal = `Journal of ${user.name} - ${journal}`
-      const response = await fetch('https://backend.omshah.workers.dev/api/journal?prompt=' + finalJournal)
-      const data: { response: string } = await response.json()
-      const res = await data.response
-      const finalres = res.replace('[Your Name]' , 'Your friend')
-      setAiResponse(finalres)
-      const subject = finalres.split('</Subject>')[0]?.replace('<Subject>', '')
-        
-        const entry = await addJournalEntry(journal, aiResponse, subject!)
-        if(entry.success === true) {
-          toast.success('Journal entry added successfully')
-        } else {
-          toast.error('Failed to add journal entry')
+      toast.promise(
+        addJournalEntry(journal),
+        {
+          loading: 'Doing some magic...',
+          success: 'your life is now saved! You can look back to it.',
+          error: 'Ohhhh SHITTTTT'
         }
+      )
 
-      const email = await sendEmail(subject!, finalres)
-      if(email.success === true) toast.success('Email sent successfully')
+      toast.promise(
+        aiResponse(journal),
+        {
+          loading: 'Asking  bade bhai for insights...',
+          success: 'Emailed - Job done, Señor! 🫡',
+          error: 'Somethign bad Happened'
+        }
+      )
 
       } catch (error) {
         toast.error('Failed to add journal entry' + error)
