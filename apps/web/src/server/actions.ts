@@ -49,6 +49,8 @@ export const aiResponse = async (journal: string) => {
       const subject = res.split('title - ')[1]?.split('<p>')[0] || 'Insights on your journal'
       const aiResponse = res.split(subject!)[1]! || res
 
+      console.log(aiResponse)
+
       await updateJournalEntry(journalId[0]!.id, aiResponse, subject!)
 
       await sendEmail(subject!, aiResponse)
@@ -165,7 +167,8 @@ const body = converter.makeHtml(html);
             html: body
         }
         
-        await trasnporter.sendMail(mailOptions)
+        const res = await trasnporter.sendMail(mailOptions)
+        console.log(res)
         return ({ success: true })
     } catch (error) {
         return ({ success: false, error: error })
